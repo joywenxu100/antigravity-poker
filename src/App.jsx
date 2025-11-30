@@ -122,7 +122,7 @@ function App() {
                 <span className="font-mono text-cyan-300">{potInfo.deadMoney}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Effective Depth (Straddles)</span>
+                <span className="text-slate-400">Effective Depth ({potInfo.hasStraddle ? 'Straddles' : 'BBs'})</span>
                 <span className={`font-mono font-bold ${potInfo.effectiveStackStraddles >= 150 ? 'text-green-400' : 'text-yellow-400'}`}>
                   {potInfo.effectiveStackStraddles.toFixed(1)}
                 </span>

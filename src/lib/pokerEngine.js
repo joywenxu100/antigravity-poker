@@ -56,15 +56,18 @@ export class PokerEngine {
   calculatePotInfo(stackSizeBB = 100) {
     const { sb, bb, straddle, ante, players } = this.structure;
     const deadMoney = sb + bb + straddle + (ante * players);
-    // Effective Big Blind is now the Straddle
-    const effectiveBB = straddle;
 
-    // Calculate effective stack in terms of Straddles
+    // If straddle is 0, effective BB is just the BB.
+    const hasStraddle = straddle > 0;
+    const effectiveBB = hasStraddle ? straddle : bb;
+
+    // Calculate effective stack
     // stackSizeBB is in original BBs. 
     // Total Stack = stackSizeBB * bb
-    // Effective Stack (Straddles) = Total Stack / straddle
     const totalStackValue = stackSizeBB * bb;
-    const effectiveStackStraddles = totalStackValue / straddle;
+
+    // Effective Stack (in terms of the effective big blind)
+    const effectiveStackDepth = totalStackValue / effectiveBB;
 
     const spr = totalStackValue / deadMoney; // Stack to Pot Ratio preflop
 
@@ -72,7 +75,8 @@ export class PokerEngine {
       deadMoney,
       effectiveBB,
       startingPotInBB: deadMoney / bb, // For display relative to BB
-      effectiveStackStraddles,
+      effectiveStackStraddles: effectiveStackDepth, // Renaming conceptually, but keeping key for compatibility or updating usage
+      hasStraddle,
       spr
     };
   }
@@ -122,11 +126,13 @@ export class PokerEngine {
     }
 
     // Straddle + Deep Stack Adjustment
-    advice.structureNote = `Structure: 8-Max, Straddle ($${this.structure.straddle}), Ante. 
-    Stack Depth: ${stackSizeBB}BB (${potInfo.effectiveStackStraddles} Straddles).
+    const depthUnit = potInfo.hasStraddle ? 'Straddles' : 'BBs';
+
+    advice.structureNote = `Structure: 8-Max, ${potInfo.hasStraddle ? `Straddle ($${this.structure.straddle})` : 'No Straddle'}, Ante. 
+    Stack Depth: ${stackSizeBB}BB (${potInfo.effectiveStackStraddles.toFixed(1)} ${depthUnit}).
     ${isDeep ? "⚠️ DEEP STACK ALERT" : "Standard Depth"}
-    With ${potInfo.effectiveStackStraddles} effective straddles, implied odds are HUGE. 
-    - Variance Minimization: Avoid stacking off with Top Pair / Overpair for >100 Straddles. Pot control is vital.
+    With ${potInfo.effectiveStackStraddles.toFixed(1)} effective ${depthUnit}, implied odds are HUGE. 
+    - Variance Minimization: Avoid stacking off with Top Pair / Overpair for >100 ${depthUnit}. Pot control is vital.
     - Winrate Maximization: Play suited connectors (78s, T9s) and small pairs (22-66) more aggressively in position. You want to crack big hands.
     - Position: Being OOP deep is a disaster. Tighten up significantly from SB/BB/UTG.`;
 
